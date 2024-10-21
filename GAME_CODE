@@ -1,0 +1,146 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define MAX_MOVES 5  // Maximum number of moves in the queue
+#define GRID_SIZE 5  // Size of the dungeon grid
+
+// Queue structure for storing moves
+typedef struct {
+    char moves[MAX_MOVES];
+    int front, rear, count;
+} MoveQueue;
+
+// Initialize the move queue
+void initQueue(MoveQueue *q) {
+    q->front = 0;
+    q->rear = -1;
+    q->count = 0;
+}
+
+// Check if the queue is full
+bool isFull(MoveQueue *q) {
+    return q->count == MAX_MOVES;
+}
+
+// Check if the queue is empty
+bool isEmpty(MoveQueue *q) {
+    return q->count == 0;
+}
+
+// Enqueue a move
+void enqueue(MoveQueue *q, char move) {
+    if (!isFull(q)) {
+        q->rear = (q->rear + 1) % MAX_MOVES;
+        q->moves[q->rear] = move;
+        q->count++;
+    } else {
+        printf("Queue is full! Execute moves before adding more.\n");
+    }
+}
+
+// Dequeue a move
+char dequeue(MoveQueue *q) {
+    if (!isEmpty(q)) {
+        char move = q->moves[q->front];
+        q->front = (q->front + 1) % MAX_MOVES;
+        q->count--;
+        return move;
+    }
+    return '\0';  // Return null character if queue is empty
+}
+
+// Display the current queue of moves
+void displayQueue(MoveQueue *q) {
+    printf("Current move queue: ");
+    if (isEmpty(q)) {
+        printf("No moves in queue.\n");
+        return;
+    }
+
+    for (int i = 0; i < q->count; i++) {
+        printf("%c ", q->moves[(q->front + i) % MAX_MOVES]);
+    }
+    printf("\n");
+}
+
+// Dungeon grid
+char dungeon[GRID_SIZE][GRID_SIZE] = {
+    {'S', '.', '.', '.', '.'},
+    {'.', '#', '#', '#', '.'},
+    {'.', '.', '.', '#', '.'},
+    {'.', '#', '.', '.', '.'},
+    {'.', '.', '.', '#', 'E'}
+};
+
+// Display the dungeon
+void displayDungeon(int playerX, int playerY) {
+    printf("Dungeon:\n");
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (i == playerX && j == playerY) {
+                printf("P ");  // Player's position
+            } else {
+                printf("%c ", dungeon[i][j]);
+            }
+        }
+        printf("\n");
+    }
+}
+
+// Move the player based on the next move in the queue
+void movePlayer(int *playerX, int *playerY, char move) {
+    int newX = *playerX, newY = *playerY;
+
+    switch (move) {
+        case 'U': newX--; break;  // Up
+        case 'D': newX++; break;  // Down
+        case 'L': newY--; break;  // Left
+        case 'R': newY++; break;  // Right
+        default: printf("Invalid move!\n"); return;
+    }
+
+    // Check if the move is valid (within grid bounds and not into a wall '#')
+    if (newX >= 0 && newX < GRID_SIZE && newY >= 0 && newY < GRID_SIZE && dungeon[newX][newY] != '#') {
+        *playerX = newX;
+        *playerY = newY;
+    } else {
+        printf("Invalid move: Wall or out of bounds!\n");
+    }
+}
+
+// Game play function
+void playGame() {
+    MoveQueue queue;
+    initQueue(&queue);
+
+    int playerX = 0, playerY = 0;  // Starting position (S)
+    char move;
+    displayDungeon(playerX, playerY);
+
+    while (dungeon[playerX][playerY] != 'E') {  // Until player reaches the exit (E)
+        displayQueue(&queue);
+
+        if (isEmpty(&queue)) {
+            printf("Enter move (U/D/L/R): ");
+            scanf(" %c", &move);
+            enqueue(&queue, move);
+        }
+
+        char nextMove = dequeue(&queue);
+        printf("Executing move: %c\n", nextMove);
+        movePlayer(&playerX, &playerY, nextMove);
+
+        displayDungeon(playerX, playerY);
+
+        if (dungeon[playerX][playerY] == 'E') {
+            printf("Congratulations! You've escaped the dungeon!\n");
+            break;
+        }
+    }
+}
+
+int main() {
+    playGame();
+    return 0;
+}
